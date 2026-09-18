@@ -1,0 +1,23 @@
+[Unit]
+Description=DrCOM4SCUT EAP and UDP authentication client
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/etc/drcom4scut/config.conf
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/drcom4scut --config /etc/drcom4scut/config.conf
+Restart=on-failure
+RestartSec=15
+KillSignal=SIGTERM
+TimeoutStopSec=15
+UMask=0077
+NoNewPrivileges=true
+CapabilityBoundingSet=CAP_NET_RAW
+AmbientCapabilities=CAP_NET_RAW
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

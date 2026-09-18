@@ -1,0 +1,36 @@
+# key=value format. Copy to /etc/drcom4scut/config.conf and chmod 600.
+interface=
+profile=windows-31
+
+# IPv4 embedded in EAP authentication packets. This may intentionally differ
+# from the address configured on the Linux interface.
+ip=
+
+# Optional IPv4 embedded in DrCOM UDP packets. If omitted, the interface IPv4
+# is used. Some networks require this to equal the registered authentication IP.
+# udp-ip=
+
+# Required by windows-31: physical wired gateway embedded in MiscInfo.
+gateway=
+
+# Optional. When omitted, the actual interface MAC is used.
+# mac=00:11:22:33:44:55
+
+username=
+password=
+
+# A hostname or a directly reachable IPv4 may be used.
+host=s.scut.edu.cn
+udp-local-port=61440
+dns=202.38.193.33,222.201.130.30,202.112.17.33,222.201.130.33
+
+# 16-byte suffix observed in the current windows-31 packet format.
+udp-trailer=2001025030007004aa0cb7dee93f3c65
+
+time=07:00
+retry=2
+interval=5000
+reconnect=15
+eap-timeout=60
+udp-timeout=12
+heartbeat-interval=300

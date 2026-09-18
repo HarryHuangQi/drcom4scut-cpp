@@ -1,0 +1,5 @@
+/build*/
+/release-assets/*.tmp
+*.log
+config.conf
+.DS_Store
