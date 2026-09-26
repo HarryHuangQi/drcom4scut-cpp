@@ -155,6 +155,9 @@ def run(binary):
                         # Drop three complete periodic cycles (each initial send + two retries).
                         # UDP loss must never tear down a healthy EAP session.
                         if alive_requests <= 9:
+                            if alive_requests % 3 == 0:
+                                # EAP health is independent from the deliberately lost UDP replies.
+                                eap(1, 9, b"\x01")
                             if alive_requests == 9:
                                 dropped_periodic = True
                             continue
