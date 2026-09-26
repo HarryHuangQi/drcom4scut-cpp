@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2
+
+- Added compact and full Windows GUI configuration modes.
+- Compact mode updates only visible basic fields and preserves advanced settings from disk.
+- Full mode exposes every persistent client option while preserving comments and unknown lines.
+
 ## 0.2.1
 
 - Restored the original Rust client's 12-second UDP heartbeat interval.

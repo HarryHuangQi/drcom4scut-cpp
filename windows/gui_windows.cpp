@@ -14,6 +14,8 @@
 #include <fstream>
 #include <map>
 #include <memory>
+#include <optional>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -24,7 +26,7 @@ namespace {
 constexpr UINT WM_LOG=WM_APP+1;
 constexpr UINT WM_FINISHED=WM_APP+2;
 constexpr int ID_INTERFACE=1001,ID_REFRESH=1002,ID_NETWORK=1003,ID_SAVE=1004,
-    ID_START=1005,ID_STOP=1006,ID_OPEN_CONFIG=1007;
+    ID_START=1005,ID_STOP=1006,ID_OPEN_CONFIG=1007,ID_ADVANCED=1008;
 
 struct Adapter {
     std::wstring friendly;
@@ -36,6 +38,11 @@ struct Adapter {
 HINSTANCE instance_handle{};
 HWND main_window{},interface_combo{},actual_ip{},actual_mac{},log_box{},status_text{};
 HWND auth_ip{},udp_ip{},gateway{},mac_field{},username{},password{},hostname{},server{},dns{};
+HWND profile{},udp_local_port{},udp_trailer{},wake_time{},retry_count{},retry_interval{};
+HWND reconnect_time{},eap_timeout{},udp_timeout{},heartbeat_interval{},run_seconds{};
+HWND advanced_button{},log_label{};
+std::vector<HWND> advanced_controls;
+bool advanced_mode=false;
 std::vector<Adapter> adapter_list;
 HANDLE child_process=nullptr,child_thread=nullptr,stop_event=nullptr,log_read=nullptr;
 std::wstring stop_event_name;
@@ -153,21 +160,72 @@ bool save_config(bool notify=true) {
         MessageBoxW(main_window,L"认证 IPv4、实际网关、账号和密码不能为空。",L"配置不完整",MB_ICONWARNING); return false;
     }
     const std::wstring path=config_path();
+    std::vector<std::string> lines;
+    {
+        std::ifstream existing(path.c_str(),std::ios::binary);
+        std::string line;
+        while(std::getline(existing,line)) {
+            if(!line.empty() && line.back()=='\r') line.pop_back();
+            lines.push_back(line);
+        }
+    }
+    if(lines.empty()) {
+        lines={
+            "# Private GUI configuration. Do not publish this file.",
+            "profile=windows-31",
+            "udp-local-port=61440",
+            "udp-trailer=2001025030007004aa0cb7dee93f3c65",
+            "time=07:00",
+            "retry=2",
+            "interval=5000",
+            "reconnect=15",
+            "eap-timeout=60",
+            "udp-timeout=12",
+            "heartbeat-interval=12"
+        };
+    }
+    std::map<std::string,std::optional<std::string>> updates;
+    auto update=[&](const char* key,HWND field) { updates[key]=utf8(text(field)); };
+    updates["interface"]=utf8(adapter_list[size_t(selected)].friendly);
+    update("ip",auth_ip);
+    updates["udp-ip"]=text(udp_ip).empty()?std::nullopt:std::optional<std::string>(utf8(text(udp_ip)));
+    update("gateway",gateway);
+    updates["mac"]=text(mac_field).empty()?std::nullopt:std::optional<std::string>(utf8(text(mac_field)));
+    update("username",username); update("password",password); update("hostname",hostname);
+    update("host",server); update("dns",dns);
+    if(advanced_mode) {
+        update("profile",profile); update("udp-local-port",udp_local_port);
+        update("udp-trailer",udp_trailer); update("time",wake_time);
+        update("retry",retry_count); update("interval",retry_interval);
+        update("reconnect",reconnect_time); update("eap-timeout",eap_timeout);
+        update("udp-timeout",udp_timeout); update("heartbeat-interval",heartbeat_interval);
+        update("run-seconds",run_seconds);
+    }
+
+    std::vector<std::string> merged;
+    std::set<std::string> written;
+    for(const auto& line:lines) {
+        const auto pos=line.find('=');
+        const std::string key=pos==std::string::npos?std::string():line.substr(0,pos);
+        const auto found=updates.find(key);
+        if(found==updates.end()) { merged.push_back(line); continue; }
+        if(!written.insert(key).second) continue;
+        if(found->second) merged.push_back(key+'='+*found->second);
+    }
+    for(const auto& [key,value]:updates) {
+        if(written.insert(key).second && value) merged.push_back(key+'='+*value);
+    }
+
     std::ofstream file(path.c_str(),std::ios::binary|std::ios::trunc);
     if(!file) { MessageBoxW(main_window,L"无法写入配置文件。",L"保存失败",MB_ICONERROR); return false; }
-    auto write=[&](const char* key,HWND field){ file<<key<<'='<<utf8(text(field))<<'\n'; };
-    file<<"# Private GUI configuration. Do not publish this file.\n";
-    file<<"interface="<<utf8(adapter_list[size_t(selected)].friendly)<<"\nprofile=windows-31\n";
-    write("ip",auth_ip); if(!text(udp_ip).empty()) write("udp-ip",udp_ip);
-    write("gateway",gateway); if(!text(mac_field).empty()) write("mac",mac_field);
-    write("username",username); write("password",password); write("hostname",hostname);
-    write("host",server); file<<"udp-local-port=61440\n";
-    file<<"udp-trailer=2001025030007004aa0cb7dee93f3c65\n";
-    write("dns",dns);
-    file<<"time=07:00\nretry=2\ninterval=5000\nreconnect=15\n"
-           "eap-timeout=60\nudp-timeout=12\nheartbeat-interval=12\n";
+    for(const auto& line:merged) file<<line<<'\n';
     file.close();
-    if(notify) MessageBoxW(main_window,(L"已保存到：\n"+config_path()).c_str(),L"保存成功",MB_ICONINFORMATION);
+    if(notify) {
+        const std::wstring detail=advanced_mode
+            ? L"已保存精简和完整模式字段，并保留其他配置：\n"
+            : L"仅保存精简模式字段；完整模式和其他配置保持不变：\n";
+        MessageBoxW(main_window,(detail+config_path()).c_str(),L"保存成功",MB_ICONINFORMATION);
+    }
     return true;
 }
 
@@ -240,7 +298,23 @@ HWND add_control(const wchar_t* type,const wchar_t* caption,DWORD style,int x,in
     return CreateWindowExW(ex,type,caption,WS_CHILD|WS_VISIBLE|style,x,y,w,h,main_window,
         id?reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)):nullptr,instance_handle,nullptr);
 }
-void label(const wchar_t* value,int x,int y,int width=145) { add_control(L"STATIC",value,0,x,y,width,22); }
+HWND label(const wchar_t* value,int x,int y,int width=145) { return add_control(L"STATIC",value,0,x,y,width,22); }
+HWND advanced_label(const wchar_t* value,int x,int y,int width=115) {
+    HWND control=label(value,x,y,width); advanced_controls.push_back(control); return control;
+}
+HWND advanced_edit(const wchar_t* value,int x,int y,int width=125) {
+    HWND control=add_control(L"EDIT",value,WS_BORDER|ES_AUTOHSCROLL,x,y,width,25);
+    advanced_controls.push_back(control); return control;
+}
+void show_advanced(bool show) {
+    advanced_mode=show;
+    for(HWND control:advanced_controls) ShowWindow(control,show?SW_SHOW:SW_HIDE);
+    SetWindowTextW(advanced_button,show?L"精简模式":L"完整模式");
+    const int shift=show?150:0;
+    SetWindowPos(log_label,nullptr,18,313+shift,145,22,SWP_NOZORDER);
+    SetWindowPos(log_box,nullptr,18,338+shift,772,240,SWP_NOZORDER);
+    SetWindowPos(main_window,nullptr,0,0,825,630+shift,SWP_NOMOVE|SWP_NOZORDER);
+}
 
 LRESULT CALLBACK window_proc(HWND window,UINT message,WPARAM wparam,LPARAM lparam) {
     switch(message) {
@@ -265,8 +339,22 @@ LRESULT CALLBACK window_proc(HWND window,UINT message,WPARAM wparam,LPARAM lpara
         add_control(L"BUTTON",L"开始认证",0,138,265,110,32,ID_START);
         HWND stop=add_control(L"BUTTON",L"停止认证",0,258,265,110,32,ID_STOP); EnableWindow(stop,FALSE);
         add_control(L"BUTTON",L"打开配置文件",0,378,265,125,32,ID_OPEN_CONFIG);
-        status_text=add_control(L"STATIC",L"状态：未运行",SS_SUNKEN,515,269,275,25);
-        label(L"运行日志",18,313); log_box=add_control(L"EDIT",L"",WS_BORDER|ES_MULTILINE|ES_AUTOVSCROLL|ES_READONLY|WS_VSCROLL,18,338,772,240,0,WS_EX_CLIENTEDGE);
+        advanced_button=add_control(L"BUTTON",L"完整模式",0,510,265,90,32,ID_ADVANCED);
+        status_text=add_control(L"STATIC",L"状态：未运行",SS_SUNKEN,610,269,180,25);
+
+        advanced_label(L"协议 profile",18,313); profile=advanced_edit(L"windows-31",133,309);
+        advanced_label(L"UDP 本地端口",278,313); udp_local_port=advanced_edit(L"61440",393,309);
+        advanced_label(L"恢复时间",538,313); wake_time=advanced_edit(L"07:00",653,309,137);
+        advanced_label(L"重试次数",18,348); retry_count=advanced_edit(L"2",133,344);
+        advanced_label(L"重试间隔 ms",278,348); retry_interval=advanced_edit(L"5000",393,344);
+        advanced_label(L"重连等待 s",538,348); reconnect_time=advanced_edit(L"15",653,344,137);
+        advanced_label(L"EAP 超时 s",18,383); eap_timeout=advanced_edit(L"60",133,379);
+        advanced_label(L"UDP 超时 s",278,383); udp_timeout=advanced_edit(L"12",393,379);
+        advanced_label(L"保活间隔 s",538,383); heartbeat_interval=advanced_edit(L"12",653,379,137);
+        advanced_label(L"运行时限 s",18,418); run_seconds=advanced_edit(L"0",133,414);
+        advanced_label(L"UDP trailer",278,418,115); udp_trailer=advanced_edit(L"2001025030007004aa0cb7dee93f3c65",393,414,397);
+
+        log_label=label(L"运行日志",18,313); log_box=add_control(L"EDIT",L"",WS_BORDER|ES_MULTILINE|ES_AUTOVSCROLL|ES_READONLY|WS_VSCROLL,18,338,772,240,0,WS_EX_CLIENTEDGE);
         EnumChildWindows(window,[](HWND child,LPARAM value)->BOOL{SendMessageW(child,WM_SETFONT,value,TRUE);return TRUE;},reinterpret_cast<LPARAM>(font));
         const auto values=load_values(); const auto found=values.find("interface");
         refresh_adapters(found==values.end()?L"":wide(found->second));
@@ -275,8 +363,18 @@ LRESULT CALLBACK window_proc(HWND window,UINT message,WPARAM wparam,LPARAM lpara
         set_if_present(username,values,"username"); set_if_present(password,values,"password");
         set_if_present(hostname,values,"hostname",L"windows"); set_if_present(server,values,"host",L"s.scut.edu.cn");
         set_if_present(dns,values,"dns",L"202.38.193.33,222.201.130.30,202.112.17.33,222.201.130.33");
+        set_if_present(profile,values,"profile",L"windows-31");
+        set_if_present(udp_local_port,values,"udp-local-port",L"61440");
+        set_if_present(udp_trailer,values,"udp-trailer",L"2001025030007004aa0cb7dee93f3c65");
+        set_if_present(wake_time,values,"time",L"07:00");
+        set_if_present(retry_count,values,"retry",L"2"); set_if_present(retry_interval,values,"interval",L"5000");
+        set_if_present(reconnect_time,values,"reconnect",L"15"); set_if_present(eap_timeout,values,"eap-timeout",L"60");
+        set_if_present(udp_timeout,values,"udp-timeout",L"12");
+        set_if_present(heartbeat_interval,values,"heartbeat-interval",L"12");
+        set_if_present(run_seconds,values,"run-seconds",L"0");
         // A missing mac= means "use the selected physical adapter's real MAC".
         update_adapter_details();
+        show_advanced(false);
         return 0;
     }
     case WM_COMMAND:
@@ -287,6 +385,7 @@ LRESULT CALLBACK window_proc(HWND window,UINT message,WPARAM wparam,LPARAM lpara
         else if(LOWORD(wparam)==ID_START) start_client();
         else if(LOWORD(wparam)==ID_STOP) stop_client();
         else if(LOWORD(wparam)==ID_OPEN_CONFIG) ShellExecuteW(window,L"open",config_path().c_str(),nullptr,nullptr,SW_SHOWNORMAL);
+        else if(LOWORD(wparam)==ID_ADVANCED) show_advanced(!advanced_mode);
         return 0;
     case WM_LOG: {
         std::unique_ptr<std::wstring> value(reinterpret_cast<std::wstring*>(lparam)); append_log(*value); return 0;

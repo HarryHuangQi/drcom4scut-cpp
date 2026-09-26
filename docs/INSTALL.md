@@ -2,9 +2,9 @@
 
 ## 1. 选择发布包
 
-- x86_64 Ubuntu：`drcom4scut-cpp-v0.2.1-ubuntu22.04-x86_64.tar.gz`
-- ARM64 Ubuntu/Jetson：`drcom4scut-cpp-v0.2.1-ubuntu22.04-arm64.tar.gz`
-- 纯源码：`drcom4scut-cpp-v0.2.1-source.tar.gz`
+- x86_64 Ubuntu：`drcom4scut-cpp-v0.2.2-ubuntu22.04-x86_64.tar.gz`
+- ARM64 Ubuntu/Jetson：`drcom4scut-cpp-v0.2.2-ubuntu22.04-arm64.tar.gz`
+- 纯源码：`drcom4scut-cpp-v0.2.2-source.tar.gz`
 
 校验下载文件：
 
@@ -23,16 +23,16 @@ tr -d '\r' < SHA256SUMS | sha256sum -c --ignore-missing
 x86_64：
 
 ```bash
-tar -xzf drcom4scut-cpp-v0.2.1-ubuntu22.04-x86_64.tar.gz
-cd drcom4scut-cpp-v0.2.1
+tar -xzf drcom4scut-cpp-v0.2.2-ubuntu22.04-x86_64.tar.gz
+cd drcom4scut-cpp-v0.2.2
 sudo bash install-ubuntu22.04-x86_64.sh
 ```
 
 ARM64：
 
 ```bash
-tar -xzf drcom4scut-cpp-v0.2.1-ubuntu22.04-arm64.tar.gz
-cd drcom4scut-cpp-v0.2.1
+tar -xzf drcom4scut-cpp-v0.2.2-ubuntu22.04-arm64.tar.gz
+cd drcom4scut-cpp-v0.2.2
 sudo bash install-ubuntu22.04-arm64.sh
 ```
 
