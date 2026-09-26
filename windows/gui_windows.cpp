@@ -165,7 +165,7 @@ bool save_config(bool notify=true) {
     file<<"udp-trailer=2001025030007004aa0cb7dee93f3c65\n";
     write("dns",dns);
     file<<"time=07:00\nretry=2\ninterval=5000\nreconnect=15\n"
-           "eap-timeout=60\nudp-timeout=12\nheartbeat-interval=300\n";
+           "eap-timeout=60\nudp-timeout=12\nheartbeat-interval=12\n";
     file.close();
     if(notify) MessageBoxW(main_window,(L"已保存到：\n"+config_path()).c_str(),L"保存成功",MB_ICONINFORMATION);
     return true;

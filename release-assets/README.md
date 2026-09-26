@@ -2,10 +2,10 @@
 
 包含以下文件：
 
-- `drcom4scut-cpp-v0.1.0-source.tar.gz`
-- `drcom4scut-cpp-v0.1.0-ubuntu22.04-x86_64.tar.gz`
-- `drcom4scut-cpp-v0.1.0-ubuntu22.04-arm64.tar.gz`
-- `drcom4scut-cpp-v0.2.0-windows-x86_64.zip`
+- `drcom4scut-cpp-v0.2.1-source.tar.gz`
+- `drcom4scut-cpp-v0.2.1-ubuntu22.04-x86_64.tar.gz`
+- `drcom4scut-cpp-v0.2.1-ubuntu22.04-arm64.tar.gz`
+- `drcom4scut-cpp-v0.2.1-windows-x86_64.zip`
 - `SHA256SUMS`
 
 版本说明使用仓库根目录的 RELEASE-NOTES.md。

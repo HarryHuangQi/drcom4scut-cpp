@@ -123,6 +123,11 @@ UDP session established
 UDP startup heartbeat complete
 ```
 
+`heartbeat-interval` 默认必须保持为 `12` 秒。旧版曾错误使用 300 秒，UDP
+会话可能在下一次保活前被服务器回收，表现为认证成功约五分钟后出现
+`UDP reply timeout` 并短暂重连。程序允许两轮周期保活完全丢包；连续第三轮
+仍无响应时才重新认证。
+
 点击 **停止认证** 时，GUI会通知核心正常退出，核心会尝试发送 Logoff。
 
 ## 5. 三类地址示例

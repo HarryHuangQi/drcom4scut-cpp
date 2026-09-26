@@ -74,6 +74,8 @@ def run(binary):
             modified = b""
             identity_count = 0
             heartbeat_count = 0
+            alive_requests = 0
+            dropped_periodic = False
             eap_heartbeat = False
             did_dns = False
             startup_heartbeat = False
@@ -149,6 +151,13 @@ def run(binary):
                     elif len(data) == 38 and data[0] == 255:
                         check(data[1:17] == modified, "Alive patched MD5")
                         check(data[20:36].hex() == "4472636fca26d283dd197dd9fee1016c", "Alive decrypted token")
+                        alive_requests += 1
+                        # Drop one complete periodic cycle (initial send + two retries).
+                        # The established EAP session must survive this transient UDP loss.
+                        if alive_requests <= 3:
+                            if alive_requests == 3:
+                                dropped_periodic = True
+                            continue
                         udp.sendto(bytes.fromhex("0700080006000000"), addr)
                     elif len(data) == 40 and data[:8] == bytes.fromhex("070028000b010f27"):
                         startup_heartbeat = True
@@ -183,6 +192,8 @@ def run(binary):
             check(proc.returncode == 0, "client successful SIGTERM exit")
             check(identity_count >= 2 and heartbeat_count >= 2 and eap_heartbeat and did_dns and startup_heartbeat,
                   "retry, DNS, startup heartbeat, EAP heartbeat and UDP cycles all completed")
+            check(dropped_periodic and "UDP heartbeat reply timeout; ignored (1/3)" in output,
+                  "one lost periodic UDP cycle does not reconnect the EAP session")
             check("UDP heartbeat complete" in output, "client accepted Heartbeat4")
             check("LocalIPv4=" + client_ip + " AuthIPv4=" + auth_ip + " UdpIPv4=" + client_ip in output,
                   "local, EAP authentication and UDP IPv4 are reported separately")

@@ -17,6 +17,12 @@ jobs:
         run: cmake --build build --parallel 2
       - name: Test
         run: ctest --test-dir build --output-on-failure
+      - name: Test isolated EAP and UDP session
+        run: sudo python3 tests/linux_integration.py build/drcom4scut
+      - uses: actions/upload-artifact@v4
+        with:
+          name: drcom4scut-ubuntu22.04-x86_64
+          path: build/drcom4scut
 
   windows-x86_64:
     runs-on: windows-2022

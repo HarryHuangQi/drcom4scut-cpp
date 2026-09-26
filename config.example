@@ -33,4 +33,4 @@ interval=5000
 reconnect=15
 eap-timeout=60
 udp-timeout=12
-heartbeat-interval=300
+heartbeat-interval=12

@@ -7,3 +7,4 @@
 *.hpp text eol=lf
 *.tar.gz binary
 bin/* binary
+bin/README.md text eol=lf

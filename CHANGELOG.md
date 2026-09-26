@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Restored the original Rust client's 12-second UDP heartbeat interval.
+- Tolerate two complete periodic heartbeat timeouts before reconnecting, while keeping startup authentication timeouts strict.
+
 ## 0.2.0
 
 - Added a native Windows 10/11 x86_64 authentication core using Npcap and Winsock.

@@ -68,7 +68,7 @@ struct Config {
     std::optional<Mac> mac;
     Bytes udp_trailer=unhex("2001025030007004aa0cb7dee93f3c65");
     std::vector<IP> dns{parse_ip("202.38.193.33"),parse_ip("222.201.130.30"),parse_ip("202.112.17.33"),parse_ip("222.201.130.33")};
-    int retry=2,interval=5000,reconnect=15,eap_timeout=60,udp_timeout=12,heartbeat_interval=300,wake_hour=7,wake_minute=0,run_seconds=0,udp_local_port=0;
+    int retry=2,interval=5000,reconnect=15,eap_timeout=60,udp_timeout=12,heartbeat_interval=12,wake_hour=7,wake_minute=0,run_seconds=0,udp_local_port=0;
     bool once=false,check=false;
 };
 static void usage() {
@@ -89,7 +89,7 @@ static void usage() {
         "  --time HH:MM          resume after prohibited period (default 07:00)\n"
         "  --retry N --interval MS --reconnect SEC\n"
         "  --eap-timeout SEC --udp-timeout SEC\n"
-        "  --heartbeat-interval SEC  interval between established UDP heartbeats\n"
+        "  --heartbeat-interval SEC  interval between established UDP heartbeats (default: 12)\n"
         "  --list-interfaces      list interfaces, no authentication\n"
         "  --check-interface      open raw socket then exit, no packets sent\n"
         "  --once                 exit instead of reconnecting after failure\n"
@@ -249,6 +249,7 @@ class Session {
     IP dns{}; uint8_t counter=0; bool authenticated=false;
     UdpStage stage=UdpStage::Off; Pending ep,up;
     Time last_eap=Clock::now(),next_startup{},next_alive{},udp_deadline{};
+    int heartbeat_failures=0;
     std::mt19937 rng{std::random_device{}()};
     void send_eap(const Bytes& packet,bool retry) {
         dev.send(packet); if(retry) ep={packet,Clock::now()+std::chrono::milliseconds(c.interval),0,true};
@@ -337,13 +338,24 @@ class Session {
         } else if(v[4]==0x0b && v.size()>=20 && v[5]==2 && stage==UdpStage::Heartbeat2) {
             flux=slice(v,16,4); stage=UdpStage::Heartbeat4; send_udp(heartbeat(3,++counter,random,flux,udp_ip));
         } else if(v[4]==0x0b && v.size()>=6 && v[5]==4 && stage==UdpStage::Heartbeat4) {
-            up.active=false; stage=UdpStage::Ready;
+            up.active=false; stage=UdpStage::Ready; heartbeat_failures=0;
             udp_deadline=next_alive+std::chrono::seconds(c.udp_timeout*(c.retry+2)); log("UDP heartbeat complete");
         }
     }
     void retry(Pending& p,bool eap) {
         if(!p.active || Clock::now()<p.deadline) return;
-        if(p.attempts>=c.retry) throw std::runtime_error(eap?"EAP reply timeout":"UDP reply timeout");
+        if(p.attempts>=c.retry) {
+            const bool periodic=!eap && (stage==UdpStage::HeartbeatAlive ||
+                stage==UdpStage::Heartbeat2 || stage==UdpStage::Heartbeat4);
+            if(periodic && ++heartbeat_failures<3) {
+                p.active=false; stage=UdpStage::Ready;
+                next_alive=Clock::now()+std::chrono::seconds(c.heartbeat_interval);
+                udp_deadline=next_alive+std::chrono::seconds(c.udp_timeout*(c.retry+2));
+                log("UDP heartbeat reply timeout; ignored ("+std::to_string(heartbeat_failures)+"/3)");
+                return;
+            }
+            throw std::runtime_error(eap?"EAP reply timeout":"UDP reply timeout");
+        }
         if(eap) dev.send(p.packet);
         else syscheck(send(udp.n,p.packet.data(),p.packet.size(),0)==ssize_t(p.packet.size()),"resend UDP");
         ++p.attempts; p.deadline=Clock::now()+std::chrono::milliseconds(c.interval); log(eap?"EAP retry":"UDP retry");
