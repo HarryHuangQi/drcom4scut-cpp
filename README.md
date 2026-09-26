@@ -1,6 +1,6 @@
 # drcom4scut-cpp
 
-面向 Linux 的 DrCOM/802.1X 校园网认证客户端，使用 C++17、Linux `AF_PACKET`、UDP 和 OpenSSL 实现。
+面向 Linux 和 Windows 的 DrCOM/802.1X 校园网认证客户端，使用 C++17 实现。Linux 版使用 `AF_PACKET`，Windows 版使用 Npcap；两者均使用 UDP 和 OpenSSL。
 
 该版本根据原 Rust 工程移植，并增加了当前 Windows 客户端抓包中观察到的 `windows-31` 流程：260 字节 MiscInfo、独立 EAP/UDP 认证 IPv4、网关和双 DNS 字段、UDP 启动心跳以及可配置的常规心跳周期。
 可以让国际校区本科生宿舍使用研究生有线端访问互联网
@@ -13,9 +13,9 @@
 | Ubuntu 22.04 x86_64 | `install-ubuntu22.04-x86_64.sh` | 已在 Ubuntu 22.04.5 用户空间完成编译和集成测试 |
 | Ubuntu 18.04/20.04/22.04 ARM64 | `install-ubuntu22.04-arm64.sh` | 从源码原生编译 |
 | Jetson Linux / Jetson Nano | `install-jetson-nano.sh` | 从源码原生编译并且成功实际使用 |
+| Windows 10/11 x86_64 | `drcom4scut-gui.exe` | 原生 GUI；认证核心绑定指定物理网卡，可与 Clash 共存 |
 
-程序只能在 Linux 上运行。实际认证需要直接连接校园网的物理以太网卡；WSL2 适合编译和测试，通常不能将 EAPOL 二层报文直接发送到 Windows 主机的物理网口。
-windows版还在开发中
+实际认证需要直接连接校园网的物理以太网卡。Windows 请使用原生 Windows 版和 Npcap；WSL2 适合编译和测试 Linux 代码，通常不能将 EAPOL 二层报文直接发送到 Windows 主机的物理网口。
 
 ## 下载与安装
 
@@ -43,6 +43,15 @@ Jetson 使用：
 sudo bash install-jetson-nano.sh
 ```
 
+Windows 10/11 x64 使用（发布 ZIP 已包含现成 EXE，无需自行编译）：
+
+1. 下载并解压 `drcom4scut-cpp-v0.2.0-windows-x86_64.zip`；
+2. 双击 `install-windows.cmd`；脚本检测到 Npcap 已存在时会跳过安装；
+3. 如果缺少 Npcap，按脚本打开的官方页面安装，然后重新运行安装脚本；
+4. 从开始菜单运行 GUI，认证时按 UAC 提示授予管理员权限。
+
+真实配置写入 `%APPDATA%\drcom4scut\config.conf`，不会包含在公开发布包中。详细步骤见 [Windows 教程](docs/WINDOWS.md)。
+
 安装程序会安装构建依赖、编译 Release 版本、运行协议测试，然后安装：
 
 ```text
@@ -54,6 +63,8 @@ sudo bash install-jetson-nano.sh
 它不会自动启用服务或发送认证报文。
 
 完整配置过程见 [安装说明](docs/INSTALL.md)。
+
+Windows GUI、实际 IPv4、认证地址、UDP 服务器、Clash 共存和移动热点的完整说明见 [Windows 教程](docs/WINDOWS.md)。
 
 认证成功后需要把有线网络分享为 Wi-Fi 热点时，参见 [网卡与热点转发](docs/HOTSPOT.md)。
 

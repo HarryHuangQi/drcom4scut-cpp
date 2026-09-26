@@ -2,4 +2,9 @@
 /release-assets/*.tmp
 *.log
 config.conf
+private-config/
+*.private.conf
+config.windows.conf
+windows/check-interface.conf
+windows/*.o
 .DS_Store

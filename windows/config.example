@@ -1,0 +1,37 @@
+# Windows GUI/CLI configuration. Copy to:
+# %APPDATA%\drcom4scut\config.conf
+# This file contains placeholders only. Never publish your real password.
+
+# Physical Ethernet adapter friendly name or interface index.
+interface=Ethernet
+profile=windows-31
+
+# IPv4 embedded in EAP packets. It does not change the Windows adapter address.
+ip=
+
+# IPv4 embedded in DrCOM UDP packets. Usually the registered authentication IP.
+udp-ip=
+
+# The gateway of the actual wired network.
+gateway=
+
+# Optional. Leave omitted to use the selected adapter's real MAC.
+# mac=00:11:22:33:44:55
+
+username=
+password=
+hostname=windows
+
+# Prefer the confirmed server IPv4 when Clash Fake-IP/TUN is enabled.
+host=
+udp-local-port=61440
+udp-trailer=2001025030007004aa0cb7dee93f3c65
+dns=
+
+time=07:00
+retry=2
+interval=5000
+reconnect=15
+eap-timeout=60
+udp-timeout=12
+heartbeat-interval=300

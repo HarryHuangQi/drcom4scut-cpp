@@ -17,3 +17,41 @@ jobs:
         run: cmake --build build --parallel 2
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  windows-x86_64:
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-openssl
+      - name: Build CLI and GUI
+        run: |
+          mkdir -p bin
+          g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -static -static-libgcc -static-libstdc++ \
+            windows/main_windows.cpp -o bin/drcom4scut.exe \
+            -lcrypto -lws2_32 -liphlpapi -lcrypt32 -lbcrypt
+          windres -I windows windows/resources.rc -O coff -o windows/resources.o
+          g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -municode -mwindows \
+            -static -static-libgcc -static-libstdc++ \
+            windows/gui_windows.cpp windows/resources.o -o bin/drcom4scut-gui.exe \
+            -lws2_32 -liphlpapi -lshell32 -lcomctl32 -lole32 -luuid
+      - name: Build and run protocol tests
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -static -static-libgcc -static-libstdc++ \
+            tests/protocol_tests.cpp -o bin/protocol_tests.exe \
+            -lcrypto -lws2_32 -lcrypt32 -lbcrypt
+          ./bin/protocol_tests.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: drcom4scut-windows-x86_64
+          path: |
+            bin/drcom4scut.exe
+            bin/drcom4scut-gui.exe

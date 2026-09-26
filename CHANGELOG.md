@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+- Added a native Windows 10/11 x86_64 authentication core using Npcap and Winsock.
+- Added a Win32 GUI for adapter selection, private configuration and live logs.
+- Bound Windows DNS and DrCOM UDP sockets to the selected physical adapter for Clash coexistence.
+- Added Windows build, release and mobile-hotspot documentation.
+
 ## v0.1.0
 
 - 将核心认证流程移植为 Linux C++17 实现。
