@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.4
+
+- 接受交换机发往标准 PAE 组播地址 `01:80:c2:00:00:03` 的周期 EAP Identity 请求，并及时回复已认证身份。
+- Windows、Ubuntu x86_64 和 ARM64 共用相同修复，避免 UDP 无回包期间漏掉组播 EAP 心跳后被交换机断开。
+- Linux 隔离网络集成测试改为使用抓包中实际出现的组播 EAP 心跳，同时继续覆盖连续 UDP 丢包。
+
 ## 0.2.3
 
 - Keep an authenticated EAP session active through unlimited periodic UDP heartbeat reply timeouts.

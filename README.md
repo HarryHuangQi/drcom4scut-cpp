@@ -24,16 +24,16 @@
 
 ```bash
 sha256sum -c SHA256SUMS --ignore-missing
-tar -xzf drcom4scut-cpp-v0.2.3-ubuntu22.04-x86_64.tar.gz
-cd drcom4scut-cpp-v0.2.3
+tar -xzf drcom4scut-cpp-v0.2.4-ubuntu22.04-x86_64.tar.gz
+cd drcom4scut-cpp-v0.2.4
 sudo bash install-ubuntu22.04-x86_64.sh
 ```
 
 ARM64 使用：
 
 ```bash
-tar -xzf drcom4scut-cpp-v0.2.3-ubuntu22.04-arm64.tar.gz
-cd drcom4scut-cpp-v0.2.3
+tar -xzf drcom4scut-cpp-v0.2.4-ubuntu22.04-arm64.tar.gz
+cd drcom4scut-cpp-v0.2.4
 sudo bash install-ubuntu22.04-arm64.sh
 ```
 
@@ -45,7 +45,7 @@ sudo bash install-jetson-nano.sh
 
 Windows 10/11 x64 使用（发布 ZIP 已包含现成 EXE，无需自行编译）：
 
-1. 下载并解压 `drcom4scut-cpp-v0.2.3-windows-x86_64.zip`；
+1. 下载并解压 `drcom4scut-cpp-v0.2.4-windows-x86_64.zip`；
 2. 双击 `install-windows.cmd`；脚本检测到 Npcap 已存在时会跳过安装；
 3. 如果缺少 Npcap，按脚本打开的官方页面安装，然后重新运行安装脚本；
 4. 从开始菜单运行 GUI，认证时按 UAC 提示授予管理员权限。

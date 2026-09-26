@@ -80,9 +80,9 @@ def run(binary):
             did_dns = False
             startup_heartbeat = False
 
-            def eap(code, identifier, payload=b""):
+            def eap(code, identifier, payload=b"", destination=client_mac):
                 body = struct.pack("!BBH", code, identifier, 4 + len(payload)) + payload
-                packet = client_mac + server_mac + struct.pack("!HBBH", 0x888e, 1, 0, len(body)) + body
+                packet = destination + server_mac + struct.pack("!HBBH", 0x888e, 1, 0, len(body)) + body
                 raw.send(packet.ljust(96, b"\0"))
 
             def launch():
@@ -157,7 +157,9 @@ def run(binary):
                         if alive_requests <= 9:
                             if alive_requests % 3 == 0:
                                 # EAP health is independent from the deliberately lost UDP replies.
-                                eap(1, 9, b"\x01")
+                                # Real switches also send periodic Identity requests
+                                # to the standard PAE multicast address.
+                                eap(1, 9, b"\x01", bytes.fromhex("0180c2000003"))
                             if alive_requests == 9:
                                 dropped_periodic = True
                             continue
@@ -184,7 +186,7 @@ def run(binary):
                         check(data[24:28] == struct.pack("<I", checksum * 711), "Heartbeat checksum")
                         udp.sendto(bytes([7, data[1], 40, 0, 11, 4]) + b"\0" * 34, addr)
                         heartbeat_count += 1
-                        eap(1, 9, b"\x01")
+                        eap(1, 9, b"\x01", bytes.fromhex("0180c2000003"))
                     else:
                         raise AssertionError(f"unexpected UDP packet {data.hex()}")
                 if heartbeat_count >= 2 and eap_heartbeat:

@@ -412,7 +412,10 @@ class Session {
     void eap_packet(const Bytes& frame) {
         Eap e;
         try { e=parse_eap(frame); } catch(const std::exception&) { return; }
-        if(e.dst!=client_mac || e.src==client_mac) return;
+        // Periodic 802.1X Identity requests may be sent either directly to the
+        // supplicant or to the standard PAE group address.  The latter is what
+        // the campus switch uses after authentication in the captured traffic.
+        if((e.dst!=client_mac && e.dst!=multicast) || e.src==client_mac) return;
         if(server!=multicast && server!=e.src) return;
         if(e.code==1 && e.type==1) {
             ep.active=false; last_eap=Clock::now();
