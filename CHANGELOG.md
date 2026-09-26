@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3
+
+- Keep an authenticated EAP session active through unlimited periodic UDP heartbeat reply timeouts.
+- Continue retrying periodic UDP heartbeats and reconnect only when EAP itself times out or is rejected.
+- Keep initial EAP and UDP session-establishment failures strict.
+
 ## 0.2.2
 
 - Added compact and full Windows GUI configuration modes.

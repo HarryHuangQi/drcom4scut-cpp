@@ -24,16 +24,16 @@
 
 ```bash
 sha256sum -c SHA256SUMS --ignore-missing
-tar -xzf drcom4scut-cpp-v0.2.2-ubuntu22.04-x86_64.tar.gz
-cd drcom4scut-cpp-v0.2.2
+tar -xzf drcom4scut-cpp-v0.2.3-ubuntu22.04-x86_64.tar.gz
+cd drcom4scut-cpp-v0.2.3
 sudo bash install-ubuntu22.04-x86_64.sh
 ```
 
 ARM64 使用：
 
 ```bash
-tar -xzf drcom4scut-cpp-v0.2.2-ubuntu22.04-arm64.tar.gz
-cd drcom4scut-cpp-v0.2.2
+tar -xzf drcom4scut-cpp-v0.2.3-ubuntu22.04-arm64.tar.gz
+cd drcom4scut-cpp-v0.2.3
 sudo bash install-ubuntu22.04-arm64.sh
 ```
 
@@ -45,7 +45,7 @@ sudo bash install-jetson-nano.sh
 
 Windows 10/11 x64 使用（发布 ZIP 已包含现成 EXE，无需自行编译）：
 
-1. 下载并解压 `drcom4scut-cpp-v0.2.2-windows-x86_64.zip`；
+1. 下载并解压 `drcom4scut-cpp-v0.2.3-windows-x86_64.zip`；
 2. 双击 `install-windows.cmd`；脚本检测到 Npcap 已存在时会跳过安装；
 3. 如果缺少 Npcap，按脚本打开的官方页面安装，然后重新运行安装脚本；
 4. 从开始菜单运行 GUI，认证时按 UAC 提示授予管理员权限。
@@ -187,6 +187,8 @@ UDP startup heartbeat complete
 ```
 
 周期 UDP 保活间隔应保持 `heartbeat-interval=12`。旧配置若为 `300`，服务器可能在下一次保活前回收 UDP 会话，表现为认证成功约五分钟后短暂断网并重新认证。Windows 配置位于 `%APPDATA%\drcom4scut\config.conf`，Linux 配置位于 `/etc/drcom4scut/config.conf`；修改后重启认证程序即可生效。
+
+周期 UDP 保活回包连续超时不会主动注销已经健康的 EAP 会话；客户端会继续尝试 UDP 保活，只有 EAP 心跳超时或服务器明确拒绝时才重新认证。首次 UDP 建链失败仍会报错退出当前会话。
 
 确认成功后启用后台服务：
 

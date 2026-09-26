@@ -347,11 +347,13 @@ class Session {
         if(p.attempts>=c.retry) {
             const bool periodic=!eap && (stage==UdpStage::HeartbeatAlive ||
                 stage==UdpStage::Heartbeat2 || stage==UdpStage::Heartbeat4);
-            if(periodic && ++heartbeat_failures<3) {
+            if(periodic) {
+                ++heartbeat_failures;
                 p.active=false; stage=UdpStage::Ready;
                 next_alive=Clock::now()+std::chrono::seconds(c.heartbeat_interval);
                 udp_deadline=next_alive+std::chrono::seconds(c.udp_timeout*(c.retry+2));
-                log("UDP heartbeat reply timeout; ignored ("+std::to_string(heartbeat_failures)+"/3)");
+                log("UDP heartbeat reply timeout; ignored ("+std::to_string(heartbeat_failures)+
+                    "; keeping EAP session)");
                 return;
             }
             throw std::runtime_error(eap?"EAP reply timeout":"UDP reply timeout");

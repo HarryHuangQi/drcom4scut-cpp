@@ -127,10 +127,10 @@ UDP session established
 UDP startup heartbeat complete
 ```
 
-`heartbeat-interval` 默认必须保持为 `12` 秒。旧版曾错误使用 300 秒，UDP
-会话可能在下一次保活前被服务器回收，表现为认证成功约五分钟后出现
-`UDP reply timeout` 并短暂重连。程序允许两轮周期保活完全丢包；连续第三轮
-仍无响应时才重新认证。
+`heartbeat-interval` 默认必须保持为 `12` 秒。旧版曾错误使用 300 秒。已经
+建立 UDP 会话后，周期保活回包连续超时不会注销健康的 EAP 会话；客户端会
+持续尝试 UDP 保活。只有 EAP 心跳超时或服务器明确拒绝时才重新认证。首次
+UDP 建链和启动心跳失败仍按错误处理。
 
 点击 **停止认证** 时，GUI会通知核心正常退出，核心会尝试发送 Logoff。
 
