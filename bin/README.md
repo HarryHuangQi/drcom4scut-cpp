@@ -5,7 +5,7 @@
 SHA-256：
 
 ```text
-ed4a34dda99530370d58abd8b2a5d3e310c7c97bb9ed54bc3714bd98ba6c18fb
+b623ce004b21d91ddc00ddc60021a7e75323cffd64c29802398e7e0b10a144be
 ```
 
 建议优先使用安装脚本从源码编译。直接安装此文件：
